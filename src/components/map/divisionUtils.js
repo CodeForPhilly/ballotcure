@@ -29,3 +29,39 @@ export function debounce(fn, delay = 300) {
         timeoutId = setTimeout(() => fn.apply(this, args), delay)
     }
 }
+
+// Find division that contains the given coordinates
+export function findDivisionByCoordinates(map, lngLat) {
+    if (!map || !map.getSource('divisions') || !map.getSource('divisions')._data) {
+        return null;
+    }
+
+    const point = [lngLat.lng, lngLat.lat];
+    const features = map.getSource('divisions')._data.features;
+
+    // Find the first division polygon that contains the point
+    const containingFeature = features.find(feature => {
+        if (feature.geometry.type !== 'Polygon') return false;
+        return pointInPolygon(point, feature.geometry.coordinates[0]);
+    });
+
+    return containingFeature ? containingFeature.properties.DIVISION_NUM : null;
+}
+
+// Helper function to check if a point is inside a polygon
+function pointInPolygon(point, polygon) {
+    const [x, y] = point;
+    let inside = false;
+
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const [xi, yi] = polygon[i];
+        const [xj, yj] = polygon[j];
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+            (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
+}

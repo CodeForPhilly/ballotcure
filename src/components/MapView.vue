@@ -3,11 +3,13 @@ import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { initializeMap, addDivisionLayers, loadDivisionData } from './map/mapConfig'
 import { highlightMatchedDivisions, fitMapToFeatures } from './map/divisionHighlighting'
 import { fetchDivisionStats, updateSourceWithCounts } from './map/divisionStats'
-import { debounce, divisionWithHyphen } from './map/divisionUtils'
+import { debounce, divisionWithHyphen, findDivisionByCoordinates } from './map/divisionUtils'
 import { createClient } from '@supabase/supabase-js'
+import maplibregl from 'maplibre-gl'
 
 const mapContainer = ref(null)
 let map = null
+let userMarker = null
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -40,38 +42,172 @@ const props = defineProps({
 
 const emit = defineEmits(['update:searchResults'])
 
-// Create debounced version of fitMapToFeatures
-const debouncedFitMapToFeatures = debounce((map, divisions, element) => {
-  fitMapToFeatures(map, divisions, element)
-}, 300)
+// Create a custom marker element
+function createMarkerElement() {
+  const wrapper = document.createElement('div');
+  wrapper.style.position = 'relative';
+  wrapper.style.width = '50px';
+  wrapper.style.height = '50px';
 
-// Function to handle division clicks
-async function handleDivisionClick(division) {
-  console.log('Division clicked:', division)
+  // Create center dot
+  const dot = document.createElement('div');
+  dot.style.position = 'absolute';
+  dot.style.left = '50%';
+  dot.style.top = '50%';
+  dot.style.transform = 'translate(-50%, -50%)';
+  dot.style.width = '12px';
+  dot.style.height = '12px';
+  dot.style.backgroundColor = '#3388ff';
+  dot.style.borderRadius = '50%';
+  dot.style.border = '2px solid white';
+  dot.style.boxShadow = '0 0 4px rgba(0,0,0,0.4)';
+  wrapper.appendChild(dot);
+
+  // Create three pulse rings
+  for (let i = 0; i < 3; i++) {
+    const ring = document.createElement('div');
+    ring.style.position = 'absolute';
+    ring.style.left = '50%';
+    ring.style.top = '50%';
+    ring.style.transform = 'translate(-50%, -50%)';
+    ring.style.width = '12px';
+    ring.style.height = '12px';
+    ring.style.borderRadius = '50%';
+    ring.style.border = '2px solid #3388ff';
+    ring.style.opacity = '0';
+    ring.style.animation = `pulse${i + 1} 2s infinite`;
+    wrapper.appendChild(ring);
+  }
+
+  // Add keyframes for each ring
+  if (!document.getElementById('marker-pulse-keyframes')) {
+    const style = document.createElement('style');
+    style.id = 'marker-pulse-keyframes';
+    style.textContent = `
+      @keyframes pulse1 {
+        0% { width: 12px; height: 12px; opacity: 0.6; }
+        100% { width: 40px; height: 40px; opacity: 0; }
+      }
+      @keyframes pulse2 {
+        0% { width: 12px; height: 12px; opacity: 0; }
+        33% { width: 12px; height: 12px; opacity: 0.6; }
+        100% { width: 40px; height: 40px; opacity: 0; }
+      }
+      @keyframes pulse3 {
+        0% { width: 12px; height: 12px; opacity: 0; }
+        66% { width: 12px; height: 12px; opacity: 0.6; }
+        100% { width: 40px; height: 40px; opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  return wrapper;
+}
+
+// Function to get user's location
+async function getUserLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by your browser'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          lng: position.coords.longitude,
+          lat: position.coords.latitude
+        });
+      },
+      (error) => {
+        console.log('Geolocation error:', error.message);
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
+    );
+  });
+}
+
+// Function to select and load division data
+async function selectDivision(division, location = null) {
+  console.log('Selecting division:', division);
   try {
     const { data, error } = await supabase
       .from('phila_ballots')
       .select('name, division, id_number, birth_year, zip, ballot_status_reason')
       .eq('division', divisionWithHyphen(division))
-      .limit(100)
+      .limit(100);
 
     if (error) {
-      console.error('Supabase search error:', error)
-      return
+      console.error('Supabase search error:', error);
+      return;
     }
 
-    console.log('Search results:', data)
+    console.log('Search results:', data);
 
     // Update search results which will automatically update the panel
     emit('update:searchResults', {
       matches: data,
       divisions: [division]
-    })
+    });
+
+    // If location is provided, add/update the marker
+    if (location) {
+      if (userMarker) {
+        userMarker.remove();
+      }
+      const markerEl = createMarkerElement();
+      userMarker = new maplibregl.Marker({
+        element: markerEl,
+        anchor: 'center'
+      })
+        .setLngLat([location.lng, location.lat])
+        .addTo(map);
+    }
 
   } catch (err) {
-    console.error('Search error:', err)
+    console.error('Search error:', err);
   }
 }
+
+// Function to highlight user's division
+async function highlightUserDivision() {
+  try {
+    const location = await getUserLocation();
+
+    // Check if coordinates are within Philadelphia bounds (rough estimate)
+    const phillyBounds = {
+      north: 40.1379,
+      south: 39.8688,
+      east: -74.9557,
+      west: -75.2804
+    };
+
+    if (location.lat < phillyBounds.south || location.lat > phillyBounds.north ||
+        location.lng < phillyBounds.west || location.lng > phillyBounds.east) {
+      console.log('User location is outside Philadelphia');
+      return;
+    }
+
+    // Find the division containing these coordinates
+    const division = findDivisionByCoordinates(map, location);
+    if (division) {
+      await selectDivision(division, location);
+    }
+  } catch (error) {
+    console.error('Error getting user location:', error);
+  }
+}
+
+// Create debounced version of fitMapToFeatures
+const debouncedFitMapToFeatures = debounce((map, divisions, element) => {
+  fitMapToFeatures(map, divisions, element)
+}, 300)
 
 // Watch for search results changes
 watch(() => props.searchResults, (newResults) => {
@@ -117,6 +253,12 @@ onMounted(async () => {
       divisionStats.value = await fetchDivisionStats()
       updateSourceWithCounts(map, divisionStats.value)
 
+      // Wait for the style to be fully loaded before getting user location
+      map.once('styledata', async () => {
+        // Get and highlight user's division
+        await highlightUserDivision()
+      });
+
       // Add hover interaction
       map.on('mousemove', 'divisions-fill', (e) => {
         if (e.features.length > 0) {
@@ -133,7 +275,7 @@ onMounted(async () => {
       map.on('click', 'divisions-fill', (e) => {
         if (e.features.length > 0) {
           const division = e.features[0].properties.DIVISION_NUM
-          handleDivisionClick(division)
+          selectDivision(division)
         }
       })
 
@@ -153,6 +295,15 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  // Remove the keyframes style if it exists
+  const keyframesStyle = document.getElementById('marker-pulse-keyframes');
+  if (keyframesStyle) {
+    keyframesStyle.remove();
+  }
+
+  if (userMarker) {
+    userMarker.remove()
+  }
   if (map) {
     map.remove()
   }
