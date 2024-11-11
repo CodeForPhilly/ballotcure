@@ -5,8 +5,8 @@ const hoursLeft = ref(0)
 const minutesLeft = ref(0)
 const percentComplete = ref(0)
 
-const startDate = new Date('2024-11-09T00:00:00')
-const endDate = new Date('2024-11-12T00:00:00')
+const startDate = new Date('2024-11-11T00:00:00')
+const endDate = new Date('2024-11-13T00:00:00')
 const totalDuration = endDate - startDate
 
 function updateCountdown() {
@@ -23,7 +23,7 @@ function updateCountdown() {
 
   hoursLeft.value = Math.floor(timeLeft / (1000 * 60 * 60))
   minutesLeft.value = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
-  percentComplete.value = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100))
+  percentComplete.value = Math.min(100, Math.max(0, (timeLeft / totalDuration) * 100))
 }
 
 let interval
