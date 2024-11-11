@@ -4,7 +4,7 @@ import { ref, computed, watch } from 'vue'
 const props = defineProps({
   results: {
     type: Object,
-    default: () => ({ matches: [], divisions: [] })
+    default: () => ({ matches: [], divisions: [], searchTerm: '' })
   }
 })
 
@@ -14,6 +14,26 @@ const isExpanded = ref(false)
 
 const sortedResults = computed(() => {
   return [...props.results.matches].sort((a, b) => a.name.localeCompare(b.name))
+})
+
+// Compute the results title based on the type of search
+const resultsTitle = computed(() => {
+  if (props.results.matches.length === 0) {
+    return 'No Results'
+  }
+
+  // If there's a search term, it's a text-based search
+  if (props.results.searchTerm) {
+    return `Search Results for "${props.results.searchTerm}" - ${props.results.matches.length} Results`
+  }
+
+  // If there's exactly one division, it's from a map click
+  if (props.results.divisions.length === 1) {
+    return `Division ${props.results.divisions[0]} - ${props.results.matches.length} Results`
+  }
+
+  // Default case
+  return `${props.results.matches.length} Results`
 })
 
 // Watch for changes in results to auto-expand/collapse
@@ -37,7 +57,7 @@ const toggleExpand = () => {
 <template>
   <div class="search-results" :class="{ expanded: isExpanded }">
     <div class="results-header" @click="toggleExpand">
-      <span class="result-count">{{ props.results.matches.length }} Results</span>
+      <span class="result-count">{{ resultsTitle }}</span>
       <button class="expand-button">
         {{ isExpanded ? '▼' : '▲' }}
       </button>

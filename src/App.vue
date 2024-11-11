@@ -5,7 +5,7 @@ import SearchBox from './components/SearchBox.vue'
 import MapView from './components/MapView.vue'
 import SearchResults from './components/SearchResults.vue'
 
-const searchResults = ref({ matches: [], divisions: [] })
+const searchResults = ref({ matches: [], divisions: [], searchTerm: '' })
 const isResultsExpanded = ref(false)
 
 function handleSearch(results) {
@@ -17,7 +17,8 @@ function handleExpandedChange(expanded) {
 }
 
 function handleMapSearch(results) {
-  searchResults.value = results
+  // For map searches, ensure we clear any previous search term
+  searchResults.value = { ...results, searchTerm: '' }
   isResultsExpanded.value = true
 }
 </script>

@@ -33,7 +33,7 @@ watch(searchQuery, debounce(async (newQuery) => {
     await handleSearch()
   } else {
     console.log('Query too short, clearing results')
-    emit('search', { matches: [], divisions: [] })
+    emit('search', { matches: [], divisions: [], searchTerm: '' })
   }
 }, 300))
 
@@ -62,7 +62,8 @@ async function handleSearch() {
 
     emit('search', {
       matches: data,
-      divisions: divisions
+      divisions: divisions,
+      searchTerm: searchQuery.value
     })
   } catch (err) {
     console.error('Search error:', err)
