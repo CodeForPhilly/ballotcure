@@ -6,6 +6,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 
 const mapContainer = ref(null)
 let map = null
+const ZOOM_THRESHOLD = 13
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -47,10 +48,8 @@ async function fetchDivisionStats() {
       return acc
     }, {})
 
-    // Wait a bit to ensure the map source is fully loaded
-    setTimeout(() => {
-      addDivisionLabels()
-    }, 1000)
+    // Update the source data with count information
+    updateSourceWithCounts()
   } catch (err) {
     console.error('Error in fetchDivisionStats:', err)
   }
@@ -58,69 +57,39 @@ async function fetchDivisionStats() {
 
 // Format division with - split
 function formatDivisionNum(divisionNum) {
-  return `${divisionNum.substr(0, 2)}-${divisionNum.substr(2, 2)}`;
+  // Ensure the division number is padded to 4 digits
+  const paddedNum = divisionNum.padStart(4, '0')
+  return `${paddedNum.substr(0, 2)}-${paddedNum.substr(2, 2)}`
 }
 
-// Add text labels for counts
-function addDivisionLabels() {
-  // Remove existing labels if any
-  const existingLabels = document.getElementsByClassName('division-label')
-  while (existingLabels.length > 0) {
-    existingLabels[0].remove()
-  }
+// Update the source data with count information
+function updateSourceWithCounts() {
+  if (!map) return
 
-  // Get all division features
   const source = map.getSource('divisions')
-  if (!source) {
-    console.error('Divisions source not found')
-    return
-  }
+  if (!source) return
 
-  const features = map.queryRenderedFeatures(null, { layers: ['divisions-layer'] })
-  console.log('Found features:', features.length)
+  const data = source._data
+  if (!data || !data.features) return
 
-  if (features.length === 0) {
-    // Try to get features directly from the source data
-    const sourceData = map.getSource('divisions')._data
-    if (sourceData && sourceData.features) {
-      console.log('Source features:', sourceData.features.length)
-      features.push(...sourceData.features)
-    }
-  }
-
-  features.forEach(feature => {
+  // Add count property to each feature
+  const updatedFeatures = data.features.map(feature => {
     const division = formatDivisionNum(feature.properties.DIVISION_NUM)
-    console.log('Processing division:', division)
     const count = divisionStats.value[division]
-
-    if (count !== undefined) {
-      // Calculate the center of the division polygon
-      const coordinates = feature.geometry.coordinates[0]
-      const bounds = coordinates.reduce((bounds, coord) => {
-        return [
-          [Math.min(bounds[0][0], coord[0]), Math.min(bounds[0][1], coord[1])],
-          [Math.max(bounds[1][0], coord[0]), Math.max(bounds[1][1], coord[1])]
-        ]
-      }, [[coordinates[0][0], coordinates[0][1]], [coordinates[0][0], coordinates[0][1]]])
-
-      const center = [
-        (bounds[0][0] + bounds[1][0]) / 2,
-        (bounds[0][1] + bounds[1][1]) / 2
-      ]
-
-      // Create a label element
-      const el = document.createElement('div')
-      el.className = 'division-label'
-      el.textContent = count
-
-      // Add the label to the map
-      new maplibregl.Marker({
-        element: el,
-        anchor: 'center'
-      })
-        .setLngLat(center)
-        .addTo(map)
+    console.log(`Division ${division}: count = ${count}`) // Debug log
+    return {
+      ...feature,
+      properties: {
+        ...feature.properties,
+        count: count || 0
+      }
     }
+  })
+
+  // Update the source with new data
+  map.getSource('divisions').setData({
+    type: 'FeatureCollection',
+    features: updatedFeatures
   })
 }
 
@@ -169,6 +138,27 @@ onMounted(() => {
         }
       }, 'divisions-layer')
 
+      // Add labels layer
+      map.addLayer({
+        id: 'divisions-labels',
+        type: 'symbol',
+        source: 'divisions',
+        minzoom: ZOOM_THRESHOLD,
+        layout: {
+          'text-field': ['to-string', ['get', 'count']],
+          'text-size': 14,
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
+          'text-anchor': 'center',
+          'text-max-width': 8
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': '#ff474c',
+          'text-halo-width': 2
+        }
+      })
+
       // Add hover effect
       map.addLayer({
         id: 'divisions-hover',
@@ -196,9 +186,6 @@ onMounted(() => {
 
       // Fetch and display division stats
       await fetchDivisionStats()
-
-      // Update labels on zoom end
-      map.on('zoomend', addDivisionLabels)
     } catch (err) {
       console.error('Error loading map data:', err)
     }
@@ -221,12 +208,5 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   min-height: 400px;
-}
-
-:global(.division-label) {
-  color: black;
-  font-size: 12px;
-  pointer-events: none;
-  white-space: nowrap;
 }
 </style>
