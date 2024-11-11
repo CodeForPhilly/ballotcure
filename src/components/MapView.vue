@@ -9,7 +9,7 @@ let map = null
 onMounted(() => {
   map = new maplibregl.Map({
     container: mapContainer.value,
-    style: 'https://demotiles.maplibre.org/style.json',
+    style: 'https://api.maptiler.com/maps/openstreetmap/style.json?key=XYHvSt2RxwZPOxjSj98n',
     center: [-75.1652, 39.9526], // Philadelphia coordinates
     zoom: 12
   })
