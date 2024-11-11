@@ -37,10 +37,27 @@ const props = defineProps({
   }
 })
 
-// Convert division format from "01-02" to "0102"
-function convertDivisionFormat(division) {
+// Convert division format to remove hyphen (e.g., "01-02" -> "0102")
+// Idempotent: running multiple times produces same result
+function divisionWithoutHyphen(division) {
+  // If no hyphen present, assume it's already in correct format
+  if (!division.includes('-')) {
+    return division
+  }
   const [ward, div] = division.split('-')
   return ward + div
+}
+
+// Format division with hyphen (e.g., "0102" -> "01-02")
+// Idempotent: running multiple times produces same result
+function divisionWithHyphen(divisionNum) {
+  // If already contains hyphen, return as is
+  if (divisionNum.includes('-')) {
+    return divisionNum
+  }
+  // Ensure the division number is padded to 4 digits
+  const paddedNum = divisionNum.padStart(4, '0')
+  return `${paddedNum.substr(0, 2)}-${paddedNum.substr(2, 2)}`
 }
 
 // Highlight matched divisions
@@ -62,7 +79,7 @@ function highlightMatchedDivisions(divisions) {
 
   if (divisions && divisions.length > 0) {
     // Convert division format and create filter
-    const convertedDivisions = divisions.map(convertDivisionFormat)
+    const convertedDivisions = divisions.map(divisionWithoutHyphen)
     console.log('Converted divisions:', convertedDivisions)
 
     // Store highlighted divisions
@@ -220,13 +237,6 @@ async function fetchDivisionStats() {
   }
 }
 
-// Format division with - split
-function formatDivisionNum(divisionNum) {
-  // Ensure the division number is padded to 4 digits
-  const paddedNum = divisionNum.padStart(4, '0')
-  return `${paddedNum.substr(0, 2)}-${paddedNum.substr(2, 2)}`
-}
-
 // Update the source data with count information
 function updateSourceWithCounts() {
   if (!map) return
@@ -239,7 +249,7 @@ function updateSourceWithCounts() {
 
   // Add count property to each feature
   const updatedFeatures = data.features.map(feature => {
-    const division = formatDivisionNum(feature.properties.DIVISION_NUM)
+    const division = divisionWithHyphen(feature.properties.DIVISION_NUM)
     const count = divisionStats.value[division]
     return {
       ...feature,
@@ -336,7 +346,7 @@ onMounted(() => {
       // Add hover interaction
       map.on('mousemove', 'divisions-layer', (e) => {
         if (e.features.length > 0) {
-          const division = formatDivisionNum(e.features[0].properties.DIVISION_NUM)
+          const division = divisionWithHyphen(e.features[0].properties.DIVISION_NUM)
           map.setFilter('divisions-hover', ['==', ['get', 'division'], division])
         }
       })
