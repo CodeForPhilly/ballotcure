@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import maplibregl from 'maplibre-gl'
 import { createClient } from '@supabase/supabase-js'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -22,6 +22,107 @@ const supabase = createClient(
 // Store division stats
 const divisionStats = ref({})
 
+// Define props for search results
+const props = defineProps({
+  searchResults: {
+    type: Object,
+    default: () => ({ matches: [], divisions: [] })
+  }
+})
+
+// Convert division format from "01-02" to "0102"
+function convertDivisionFormat(division) {
+  const [ward, div] = division.split('-')
+  return ward + div
+}
+
+// Highlight matched divisions
+function highlightMatchedDivisions(divisions) {
+  if (!map) {
+    console.log('Map not initialized yet')
+    return
+  }
+
+  console.log('Highlighting divisions:', divisions)
+
+  // Reset all divisions to default style
+  map.setPaintProperty('divisions-fill', 'fill-color', '#627BC1')
+  map.setPaintProperty('divisions-fill', 'fill-opacity', 0.2)
+
+  if (divisions && divisions.length > 0) {
+    // Convert division format and create filter
+    const convertedDivisions = divisions.map(convertDivisionFormat)
+    console.log('Converted divisions:', convertedDivisions)
+
+    // Create a filter for matched divisions
+    const matchFilter = ['in',
+      ['get', 'DIVISION_NUM'],
+      ['literal', convertedDivisions]
+    ]
+
+    console.log('Applying match filter:', JSON.stringify(matchFilter))
+
+    // Highlight matched divisions
+    map.setPaintProperty('divisions-fill', 'fill-color', [
+      'case',
+      matchFilter,
+      '#ff474c', // Highlight color for matches
+      '#627BC1'  // Default color
+    ])
+
+    map.setPaintProperty('divisions-fill', 'fill-opacity', [
+      'case',
+      matchFilter,
+      0.5,  // Higher opacity for matches
+      0.2   // Default opacity
+    ])
+
+    // Fit map to matched divisions
+    fitMapToFeatures(convertedDivisions)
+  }
+}
+
+// Fit map view to matched features
+function fitMapToFeatures(divisions) {
+  if (!map || !divisions.length) return
+
+  console.log('Fitting map to divisions:', divisions)
+
+  const features = map.querySourceFeatures('divisions', {
+    filter: ['in', ['get', 'DIVISION_NUM'], ['literal', divisions]]
+  })
+
+  console.log('Found matching features:', features.length)
+
+  if (features.length === 0) return
+
+  // Calculate bounds of all matched features
+  const bounds = new maplibregl.LngLatBounds()
+  features.forEach(feature => {
+    if (feature.geometry.type === 'Polygon') {
+      feature.geometry.coordinates[0].forEach(coord => {
+        bounds.extend(coord)
+      })
+    }
+  })
+
+  // Fit map to bounds with padding
+  map.fitBounds(bounds, {
+    padding: 50,
+    maxZoom: 16
+  })
+}
+
+// Watch for search results changes
+watch(() => props.searchResults, (newResults) => {
+  console.log('Search results updated:', newResults)
+  if (newResults && newResults.divisions) {
+    highlightMatchedDivisions(newResults.divisions)
+  } else {
+    highlightMatchedDivisions([])
+  }
+}, { deep: true })
+
 // Fetch division stats from Supabase
 async function fetchDivisionStats() {
   try {
@@ -40,7 +141,7 @@ async function fetchDivisionStats() {
       return
     }
 
-    console.log('Received data:', data)
+    console.log('Received division stats:', data)
 
     // Convert array to object for easier lookup
     divisionStats.value = data.reduce((acc, item) => {
@@ -76,7 +177,6 @@ function updateSourceWithCounts() {
   const updatedFeatures = data.features.map(feature => {
     const division = formatDivisionNum(feature.properties.DIVISION_NUM)
     const count = divisionStats.value[division]
-    console.log(`Division ${division}: count = ${count}`) // Debug log
     return {
       ...feature,
       properties: {
@@ -109,8 +209,6 @@ onMounted(() => {
     try {
       const response = await fetch('/data/philadelphia-divisions.geojson')
       const geojsonData = await response.json()
-      console.log('Loaded GeoJSON data:', geojsonData.features.length, 'features')
-      console.log('Sample feature:', geojsonData.features[0])
 
       map.addSource('divisions', {
         type: 'geojson',
@@ -175,7 +273,6 @@ onMounted(() => {
       map.on('mousemove', 'divisions-layer', (e) => {
         if (e.features.length > 0) {
           const division = formatDivisionNum(e.features[0].properties.DIVISION_NUM)
-          console.log('Hovering over division:', division)
           map.setFilter('divisions-hover', ['==', ['get', 'division'], division])
         }
       })

@@ -1,11 +1,13 @@
 <script setup>
+import { ref } from 'vue'
 import CountdownBar from './components/CountdownBar.vue'
 import SearchBox from './components/SearchBox.vue'
 import MapView from './components/MapView.vue'
 
-function handleSearch(query) {
-  console.log('Search query:', query)
-  // TODO: Implement search functionality
+const searchResults = ref({ matches: [], divisions: [] })
+
+function handleSearch(results) {
+  searchResults.value = results
 }
 </script>
 
@@ -14,7 +16,7 @@ function handleSearch(query) {
     <CountdownBar />
     <SearchBox @search="handleSearch" />
     <div class="map-wrapper">
-      <MapView />
+      <MapView :searchResults="searchResults" />
     </div>
   </div>
 </template>
