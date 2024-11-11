@@ -16,10 +16,16 @@ const sortedResults = computed(() => {
   return [...props.results.matches].sort((a, b) => a.name.localeCompare(b.name))
 })
 
-// Watch for changes in results count to auto-expand/collapse
+// Watch for changes in results to auto-expand/collapse
 watch(() => props.results.matches.length, (newCount) => {
-  isExpanded.value = newCount === 1
-  emit('update:expanded', isExpanded.value)
+  // Auto-expand if there are any results
+  if (newCount > 0) {
+    isExpanded.value = true
+    emit('update:expanded', true)
+  } else {
+    isExpanded.value = false
+    emit('update:expanded', false)
+  }
 }, { immediate: true })
 
 const toggleExpand = () => {

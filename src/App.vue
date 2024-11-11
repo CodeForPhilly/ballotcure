@@ -15,6 +15,11 @@ function handleSearch(results) {
 function handleExpandedChange(expanded) {
   isResultsExpanded.value = expanded
 }
+
+function handleMapSearch(results) {
+  searchResults.value = results
+  isResultsExpanded.value = true
+}
 </script>
 
 <template>
@@ -25,6 +30,7 @@ function handleExpandedChange(expanded) {
       <MapView
         :searchResults="searchResults"
         :isResultsExpanded="isResultsExpanded"
+        @update:searchResults="handleMapSearch"
       />
       <SearchResults
         :results="searchResults"
