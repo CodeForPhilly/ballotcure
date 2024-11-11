@@ -102,7 +102,7 @@ const toggleExpand = () => {
 
 <style scoped>
 .search-results {
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
@@ -114,6 +114,11 @@ const toggleExpand = () => {
   max-height: 40vh;
   display: flex;
   flex-direction: column;
+  transform: translateY(0);
+}
+
+.search-results:not(.expanded) {
+  transform: translateY(calc(100% - 52px));
 }
 
 .results-header {
@@ -124,6 +129,8 @@ const toggleExpand = () => {
   cursor: pointer;
   border-bottom: 1px solid #eee;
   user-select: none;
+  min-height: 52px;
+  box-sizing: border-box;
 }
 
 .result-count {
@@ -137,12 +144,14 @@ const toggleExpand = () => {
   font-size: 16px;
   cursor: pointer;
   color: #666;
+  padding: 8px;
 }
 
 .results-content {
   overflow-y: auto;
   padding: 10px;
   flex: 1;
+  -webkit-overflow-scrolling: touch;
 }
 
 .results-list {
@@ -213,18 +222,15 @@ const toggleExpand = () => {
   }
 
   .search-results {
-    max-height: 70vh;
+    max-height: 80vh;
   }
 
   .result-card {
     padding: 10px;
   }
-}
 
-/* Ensure smooth scrolling on iOS */
-@supports (-webkit-touch-callout: none) {
-  .results-content {
-    -webkit-overflow-scrolling: touch;
+  .search-results:not(.expanded) {
+    transform: translateY(calc(100% - 52px));
   }
 }
 </style>
