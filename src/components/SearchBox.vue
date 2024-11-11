@@ -98,6 +98,11 @@ async function handleSearch() {
     isSearching.value = false
   }
 }
+
+// Function to handle keyboard done/enter
+function handleDone(event) {
+  event.target.blur()
+}
 </script>
 
 <template>
@@ -109,6 +114,7 @@ async function handleSearch() {
         placeholder="Search by name (min 3 characters)..."
         class="search-input"
         :disabled="isLoading"
+        @keyup.enter="handleDone"
       />
       <div v-if="isLoading || isSearching" class="loading-spinner"></div>
     </div>
