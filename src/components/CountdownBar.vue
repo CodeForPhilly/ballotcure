@@ -12,7 +12,6 @@ const totalDuration = endDate - startDate
 function updateCountdown() {
   const now = new Date()
   const timeLeft = endDate - now
-  const elapsed = now - startDate
 
   if (timeLeft <= 0) {
     hoursLeft.value = 0
@@ -43,7 +42,7 @@ onUnmounted(() => {
       <div class="progress" :style="{ width: percentComplete + '%' }"></div>
     </div>
     <div class="time-left">
-      {{ hoursLeft }}h {{ minutesLeft }}m remaining
+      {{ hoursLeft }}h {{ minutesLeft }}m remaining to cure ballots
     </div>
   </div>
 </template>
