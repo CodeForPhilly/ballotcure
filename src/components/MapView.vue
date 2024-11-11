@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import maplibregl from 'maplibre-gl'
 import { createClient } from '@supabase/supabase-js'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -7,6 +7,9 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 const mapContainer = ref(null)
 let map = null
 const ZOOM_THRESHOLD = 13
+
+// Store highlighted divisions in reactive state
+const highlightedDivisions = ref([])
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -27,6 +30,10 @@ const props = defineProps({
   searchResults: {
     type: Object,
     default: () => ({ matches: [], divisions: [] })
+  },
+  isResultsExpanded: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -54,6 +61,9 @@ function highlightMatchedDivisions(divisions) {
     const convertedDivisions = divisions.map(convertDivisionFormat)
     console.log('Converted divisions:', convertedDivisions)
 
+    // Store highlighted divisions
+    highlightedDivisions.value = convertedDivisions
+
     // Create a filter for matched divisions
     const matchFilter = ['in',
       ['get', 'DIVISION_NUM'],
@@ -78,18 +88,24 @@ function highlightMatchedDivisions(divisions) {
     ])
 
     // Fit map to matched divisions
-    fitMapToFeatures(convertedDivisions)
+    fitMapToFeatures()
   }
 }
 
 // Fit map view to matched features
-function fitMapToFeatures(divisions) {
-  if (!map || !divisions.length) return
+async function fitMapToFeatures() {
+  if (!map || !highlightedDivisions.value.length) return
 
-  console.log('Fitting map to divisions:', divisions)
+  console.log('Fitting map to divisions:', highlightedDivisions.value)
+
+  // Wait for DOM updates to complete
+  await nextTick()
+
+  // Add a small delay to ensure transitions have completed
+  await new Promise(resolve => setTimeout(resolve, 300))
 
   const features = map.querySourceFeatures('divisions', {
-    filter: ['in', ['get', 'DIVISION_NUM'], ['literal', divisions]]
+    filter: ['in', ['get', 'DIVISION_NUM'], ['literal', highlightedDivisions.value]]
   })
 
   console.log('Found matching features:', features.length)
@@ -106,9 +122,24 @@ function fitMapToFeatures(divisions) {
     }
   })
 
-  // Fit map to bounds with padding
+  // Get the search results bar height after DOM updates
+  const searchResults = document.querySelector('.search-results')
+  const searchResultsHeight = searchResults ? searchResults.offsetHeight : 0
+
+  console.log('Search results height:', searchResultsHeight)
+
+  // Calculate padding based on search results height
+  // Add extra padding on the bottom to account for the search results bar
+  const padding = {
+    top: 50,
+    bottom: searchResultsHeight + 50, // Add extra padding for search results
+    left: 50,
+    right: 50
+  }
+
+  // Fit map to bounds with dynamic padding
   map.fitBounds(bounds, {
-    padding: 50,
+    padding,
     maxZoom: 16
   })
 }
@@ -122,6 +153,13 @@ watch(() => props.searchResults, (newResults) => {
     highlightMatchedDivisions([])
   }
 }, { deep: true })
+
+// Watch for changes in results expanded state
+watch(() => props.isResultsExpanded, () => {
+  if (highlightedDivisions.value.length > 0) {
+    fitMapToFeatures()
+  }
+})
 
 // Fetch division stats from Supabase
 async function fetchDivisionStats() {

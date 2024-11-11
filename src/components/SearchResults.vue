@@ -8,6 +8,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['update:expanded'])
+
 const isExpanded = ref(false)
 
 const sortedResults = computed(() => {
@@ -17,10 +19,12 @@ const sortedResults = computed(() => {
 // Watch for changes in results count to auto-expand/collapse
 watch(() => props.results.matches.length, (newCount) => {
   isExpanded.value = newCount === 1
+  emit('update:expanded', isExpanded.value)
 }, { immediate: true })
 
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value
+  emit('update:expanded', isExpanded.value)
 }
 </script>
 

@@ -6,9 +6,14 @@ import MapView from './components/MapView.vue'
 import SearchResults from './components/SearchResults.vue'
 
 const searchResults = ref({ matches: [], divisions: [] })
+const isResultsExpanded = ref(false)
 
 function handleSearch(results) {
   searchResults.value = results
+}
+
+function handleExpandedChange(expanded) {
+  isResultsExpanded.value = expanded
 }
 </script>
 
@@ -17,8 +22,14 @@ function handleSearch(results) {
     <CountdownBar />
     <SearchBox @search="handleSearch" />
     <div class="map-wrapper">
-      <MapView :searchResults="searchResults" />
-      <SearchResults :results="searchResults" />
+      <MapView
+        :searchResults="searchResults"
+        :isResultsExpanded="isResultsExpanded"
+      />
+      <SearchResults
+        :results="searchResults"
+        @update:expanded="handleExpandedChange"
+      />
     </div>
   </div>
 </template>
