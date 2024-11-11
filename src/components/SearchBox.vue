@@ -78,9 +78,6 @@ async function handleSearch() {
       placeholder="Search by name (min 3 characters)..."
       class="search-input"
     />
-    <button @click="handleSearch" class="search-button">
-      Search
-    </button>
   </div>
 </template>
 
@@ -90,12 +87,10 @@ async function handleSearch() {
   padding: 10px;
   background: #fff;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  display: flex;
-  gap: 10px;
 }
 
 .search-input {
-  flex: 1;
+  width: 100%;
   padding: 10px 15px;
   font-size: 16px;
   border: 1px solid #ddd;
@@ -105,19 +100,5 @@ async function handleSearch() {
 
 .search-input:focus {
   border-color: #4CAF50;
-}
-
-.search-button {
-  padding: 10px 20px;
-  background: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.search-button:hover {
-  background: #45a049;
 }
 </style>
