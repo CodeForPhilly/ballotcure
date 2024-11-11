@@ -222,7 +222,7 @@ const toggleExpand = () => {
   }
 
   .search-results {
-    max-height: 80vh;
+    max-height: 50vh;
   }
 
   .result-card {
