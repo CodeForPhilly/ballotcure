@@ -78,9 +78,14 @@ async function baseFitMapToFeatures() {
   // Wait for DOM updates to complete
   await nextTick()
 
-  const features = map.querySourceFeatures('divisions', {
-    filter: ['in', ['get', 'DIVISION_NUM'], ['literal', highlightedDivisions.value]]
-  })
+  // Get the source data directly instead of using querySourceFeatures
+  const source = map.getSource('divisions')
+  if (!source || !source._data) return
+
+  const allFeatures = source._data.features
+  const features = allFeatures.filter(feature =>
+    highlightedDivisions.value.includes(feature.properties.DIVISION_NUM)
+  )
 
   console.log('Found matching features:', features.length)
 
@@ -95,6 +100,8 @@ async function baseFitMapToFeatures() {
       })
     }
   })
+
+  console.log('Bounds:', bounds)
 
   // Get the search results bar height after DOM updates
   const searchResults = document.querySelector('.search-results')
