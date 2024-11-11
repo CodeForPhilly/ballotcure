@@ -60,6 +60,67 @@ function divisionWithHyphen(divisionNum) {
   return `${paddedNum.substr(0, 2)}-${paddedNum.substr(2, 2)}`
 }
 
+// Create a debounced version of a function
+function debounce(fn, delay = 300) {
+  let timeoutId
+  return function (...args) {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => fn.apply(this, args), delay)
+  }
+}
+
+// Base fitMapToFeatures implementation
+async function baseFitMapToFeatures() {
+  if (!map || !highlightedDivisions.value.length) return
+
+  console.log('Fitting map to divisions:', highlightedDivisions.value)
+
+  // Wait for DOM updates to complete
+  await nextTick()
+
+  const features = map.querySourceFeatures('divisions', {
+    filter: ['in', ['get', 'DIVISION_NUM'], ['literal', highlightedDivisions.value]]
+  })
+
+  console.log('Found matching features:', features.length)
+
+  if (features.length === 0) return
+
+  // Calculate bounds of all matched features
+  const bounds = new maplibregl.LngLatBounds()
+  features.forEach(feature => {
+    if (feature.geometry.type === 'Polygon') {
+      feature.geometry.coordinates[0].forEach(coord => {
+        bounds.extend(coord)
+      })
+    }
+  })
+
+  // Get the search results bar height after DOM updates
+  const searchResults = document.querySelector('.search-results')
+  const searchResultsHeight = searchResults ? searchResults.offsetHeight : 0
+
+  console.log('Search results height:', searchResultsHeight)
+
+  // Calculate padding based on search results height
+  // Add extra padding on the bottom to account for the search results bar
+  const padding = {
+    top: 50,
+    bottom: searchResultsHeight + 50, // Add extra padding for search results
+    left: 50,
+    right: 50
+  }
+
+  // Fit map to bounds with dynamic padding
+  map.fitBounds(bounds, {
+    padding,
+    maxZoom: 16
+  })
+}
+
+// Create debounced version of fitMapToFeatures
+const fitMapToFeatures = debounce(baseFitMapToFeatures, 300)
+
 // Highlight matched divisions
 function highlightMatchedDivisions(divisions) {
   if (!map) {
@@ -133,58 +194,6 @@ function highlightMatchedDivisions(divisions) {
     // Fit map to matched divisions
     fitMapToFeatures()
   }
-}
-
-// Fit map view to matched features
-async function fitMapToFeatures() {
-  if (!map || !highlightedDivisions.value.length) return
-
-  console.log('Fitting map to divisions:', highlightedDivisions.value)
-
-  // Wait for DOM updates to complete
-  await nextTick()
-
-  // Add a small delay to ensure transitions have completed
-  await new Promise(resolve => setTimeout(resolve, 300))
-
-  const features = map.querySourceFeatures('divisions', {
-    filter: ['in', ['get', 'DIVISION_NUM'], ['literal', highlightedDivisions.value]]
-  })
-
-  console.log('Found matching features:', features.length)
-
-  if (features.length === 0) return
-
-  // Calculate bounds of all matched features
-  const bounds = new maplibregl.LngLatBounds()
-  features.forEach(feature => {
-    if (feature.geometry.type === 'Polygon') {
-      feature.geometry.coordinates[0].forEach(coord => {
-        bounds.extend(coord)
-      })
-    }
-  })
-
-  // Get the search results bar height after DOM updates
-  const searchResults = document.querySelector('.search-results')
-  const searchResultsHeight = searchResults ? searchResults.offsetHeight : 0
-
-  console.log('Search results height:', searchResultsHeight)
-
-  // Calculate padding based on search results height
-  // Add extra padding on the bottom to account for the search results bar
-  const padding = {
-    top: 50,
-    bottom: searchResultsHeight + 50, // Add extra padding for search results
-    left: 50,
-    right: 50
-  }
-
-  // Fit map to bounds with dynamic padding
-  map.fitBounds(bounds, {
-    padding,
-    maxZoom: 16
-  })
 }
 
 // Watch for search results changes
