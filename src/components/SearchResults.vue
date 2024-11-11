@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   results: {
@@ -13,6 +13,11 @@ const isExpanded = ref(false)
 const sortedResults = computed(() => {
   return [...props.results.matches].sort((a, b) => a.name.localeCompare(b.name))
 })
+
+// Watch for changes in results count to auto-expand/collapse
+watch(() => props.results.matches.length, (newCount) => {
+  isExpanded.value = newCount === 1
+}, { immediate: true })
 
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value
