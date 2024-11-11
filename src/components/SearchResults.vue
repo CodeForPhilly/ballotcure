@@ -70,6 +70,9 @@ const toggleExpand = () => {
     </div>
 
     <div v-if="isExpanded" class="results-content">
+      <div class="cure-instructions">
+        See <a href="/help.pdf" target="_blank">help.pdf</a> for instructions on how to cure a ballot! Submit <a href="/form.pdf" target="_blank">form.pdf</a> via email or in-person. Call the Board of Elections with any questions: <a href="tel:2156863469">(215) 686-3469</a>
+      </div>
       <div class="results-list">
         <div v-for="result in sortedResults" :key="result.name + result.division" class="result-card">
           <div class="result-name">{{ result.name }}</div>
@@ -132,6 +135,27 @@ const toggleExpand = () => {
   user-select: none;
   min-height: 52px;
   box-sizing: border-box;
+}
+
+.cure-instructions {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 10px 15px;
+  font-size: 14px;
+  border-bottom: 1px solid #ffeeba;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.cure-instructions a {
+  color: #533f03;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.cure-instructions a:hover {
+  color: #533f03;
+  text-decoration: none;
 }
 
 .result-count {
