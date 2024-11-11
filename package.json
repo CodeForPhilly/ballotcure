@@ -11,7 +11,9 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "vue": "^3.5.12"
+    "node-fetch": "^3.3.2",
+    "vue": "^3.5.12",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
