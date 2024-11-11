@@ -1,4 +1,5 @@
 <script setup>
+import { divisionWithHyphen } from './map/divisionUtils'
 import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
@@ -26,12 +27,12 @@ const resultsTitle = computed(() => {
 
   // If there's a search term, it's a text-based search
   if (props.results.searchTerm) {
-    return `Search Results for "${props.results.searchTerm}" - ${props.results.matches.length} Results`
+    return `Search Results for "${props.results.searchTerm}": ${props.results.matches.length} Results`
   }
 
   // If there's exactly one division, it's from a map click
   if (props.results.divisions.length === 1) {
-    return `Division ${props.results.divisions[0]} - ${props.results.matches.length} Results`
+    return `Division ${divisionWithHyphen(props.results.divisions[0])}: ${props.results.matches.length} Results`
   }
 
   // Default case
