@@ -7,6 +7,7 @@ import SearchResults from './components/SearchResults.vue'
 
 const searchResults = ref({ matches: [], divisions: [], searchTerm: '' })
 const isResultsExpanded = ref(false)
+const searchQuery = ref('')
 
 function handleSearch(results) {
   searchResults.value = results
@@ -20,13 +21,18 @@ function handleMapSearch(results) {
   // For map searches, ensure we clear any previous search term
   searchResults.value = { ...results, searchTerm: '' }
   isResultsExpanded.value = true
+  // Clear the search box without triggering a search clear
+  searchQuery.value = ''
 }
 </script>
 
 <template>
   <div class="app">
     <CountdownBar />
-    <SearchBox @search="handleSearch" />
+    <SearchBox
+      v-model="searchQuery"
+      @search="handleSearch"
+    />
     <div class="map-wrapper">
       <MapView
         :searchResults="searchResults"

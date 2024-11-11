@@ -2,8 +2,15 @@
 import { ref, watch } from 'vue'
 import { createClient } from '@supabase/supabase-js'
 
-const searchQuery = ref('')
-const emit = defineEmits(['search'])
+const props = defineProps({
+  modelValue: {
+    type: String,
+    default: ''
+  }
+})
+
+const searchQuery = ref(props.modelValue)
+const emit = defineEmits(['search', 'update:modelValue'])
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -25,17 +32,34 @@ function debounce(func, wait) {
   }
 }
 
-// Watch for changes in search query with debounce
-watch(searchQuery, debounce(async (newQuery) => {
-  console.log('Search query changed:', newQuery)
+// Watch for external value changes
+watch(() => props.modelValue, (newValue) => {
+  if (newValue !== searchQuery.value) {
+    searchQuery.value = newValue
+  }
+})
 
-  if (newQuery.length >= 3) {
+// Watch for internal value changes
+watch(searchQuery, (newValue) => {
+  emit('update:modelValue', newValue)
+})
+
+// Watch for search query changes with debounce
+const debouncedSearch = debounce(async (query) => {
+  console.log('Search query changed:', query)
+
+  if (query.length >= 3) {
     await handleSearch()
+  } else if (query.length === 0) {
+    // Don't clear results if the query was cleared externally
+    console.log('Query cleared')
   } else {
     console.log('Query too short, clearing results')
     emit('search', { matches: [], divisions: [], searchTerm: '' })
   }
-}, 300))
+}, 300)
+
+watch(searchQuery, debouncedSearch)
 
 async function handleSearch() {
   if (searchQuery.value.length < 3) return
