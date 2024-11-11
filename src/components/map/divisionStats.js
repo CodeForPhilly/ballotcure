@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { divisionWithHyphen } from './divisionUtils'
+import { updateFillColors } from './mapConfig'
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -32,9 +33,10 @@ export async function fetchDivisionStats() {
 
         console.log('Received division stats:', data)
 
-        // Convert array to object for easier lookup
+        // Convert array to object for easier lookup, ensuring counts are numbers
         return data.reduce((acc, item) => {
-            acc[item.division] = item.count
+            // Convert null/undefined to 0 and ensure number type
+            acc[item.division] = item.count != null ? Number(item.count) : 0
             return acc
         }, {})
     } catch (err) {
@@ -57,11 +59,13 @@ export function updateSourceWithCounts(map, divisionStats) {
     const updatedFeatures = data.features.map(feature => {
         const division = divisionWithHyphen(feature.properties.DIVISION_NUM)
         const count = divisionStats[division]
+        // Ensure count is a number, default to 0 if null/undefined
+        const safeCount = count != null ? Number(count) : 0
         return {
             ...feature,
             properties: {
                 ...feature.properties,
-                count: count || 0
+                count: safeCount
             }
         }
     })
@@ -71,4 +75,7 @@ export function updateSourceWithCounts(map, divisionStats) {
         type: 'FeatureCollection',
         features: updatedFeatures
     })
+
+    // Update the fill colors based on the new counts
+    updateFillColors(map, divisionStats)
 }
