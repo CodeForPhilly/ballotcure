@@ -76,7 +76,7 @@ const toggleExpand = () => {
   z-index: 1000;
   border-radius: 12px 12px 0 0;
   transition: transform 0.3s ease;
-  max-height: 80vh;
+  max-height: 40vh;
   display: flex;
   flex-direction: column;
 }
