@@ -8,6 +8,7 @@ import SearchResults from './components/SearchResults.vue'
 const searchResults = ref({ matches: [], divisions: [], searchTerm: '' })
 const isResultsExpanded = ref(false)
 const searchQuery = ref('')
+const isSearching = ref(false)
 
 function handleSearch(results) {
   searchResults.value = results
@@ -41,6 +42,7 @@ function handleMapSearch(results) {
       />
       <SearchResults
         :results="searchResults"
+        :isLoading="isSearching"
         @update:expanded="handleExpandedChange"
       />
     </div>

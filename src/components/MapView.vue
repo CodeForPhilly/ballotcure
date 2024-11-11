@@ -11,6 +11,11 @@ const mapContainer = ref(null)
 let map = null
 let userMarker = null
 
+// Loading states
+const isLoadingMap = ref(true)
+const isLoadingLocation = ref(false)
+const isLoadingDivision = ref(false)
+
 // Initialize Supabase client
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -136,6 +141,8 @@ async function getUserLocation() {
 // Function to select and load division data
 async function selectDivision(division, location = null) {
   console.log('Selecting division:', division);
+  isLoadingDivision.value = true;
+
   try {
     const { data, error } = await supabase
       .from('phila_ballots')
@@ -172,11 +179,15 @@ async function selectDivision(division, location = null) {
 
   } catch (err) {
     console.error('Search error:', err);
+  } finally {
+    isLoadingDivision.value = false;
   }
 }
 
 // Function to highlight user's division
 async function highlightUserDivision() {
+  isLoadingLocation.value = true;
+
   try {
     const location = await getUserLocation();
 
@@ -201,6 +212,8 @@ async function highlightUserDivision() {
     }
   } catch (error) {
     console.error('Error getting user location:', error);
+  } finally {
+    isLoadingLocation.value = false;
   }
 }
 
@@ -290,6 +303,8 @@ onMounted(async () => {
 
     } catch (err) {
       console.error('Error loading map data:', err)
+    } finally {
+      isLoadingMap.value = false
     }
   })
 })
@@ -311,7 +326,25 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="mapContainer" class="map-container"></div>
+  <div class="map-container">
+    <div ref="mapContainer" class="map"></div>
+
+    <!-- Loading overlays -->
+    <div v-if="isLoadingMap" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading map data...</div>
+    </div>
+
+    <div v-if="isLoadingLocation" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Getting your location...</div>
+    </div>
+
+    <div v-if="isLoadingDivision" class="loading-overlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading division data...</div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -319,5 +352,46 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   min-height: 400px;
+  position: relative;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4CAF50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+.loading-text {
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

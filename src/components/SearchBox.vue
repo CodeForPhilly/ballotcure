@@ -10,6 +10,7 @@ const props = defineProps({
 })
 
 const searchQuery = ref(props.modelValue)
+const isLoading = ref(false)
 const emit = defineEmits(['search', 'update:modelValue'])
 
 // Initialize Supabase client
@@ -65,6 +66,7 @@ async function handleSearch() {
   if (searchQuery.value.length < 3) return
 
   console.log('Executing search for:', searchQuery.value)
+  isLoading.value = true
 
   try {
     const { data, error } = await supabase
@@ -91,18 +93,24 @@ async function handleSearch() {
     })
   } catch (err) {
     console.error('Search error:', err)
+  } finally {
+    isLoading.value = false
   }
 }
 </script>
 
 <template>
   <div class="search-container">
-    <input
-      type="text"
-      v-model="searchQuery"
-      placeholder="Search by name (min 3 characters)..."
-      class="search-input"
-    />
+    <div class="search-wrapper">
+      <input
+        type="text"
+        v-model="searchQuery"
+        placeholder="Search by name (min 3 characters)..."
+        class="search-input"
+        :disabled="isLoading"
+      />
+      <div v-if="isLoading" class="loading-spinner"></div>
+    </div>
   </div>
 </template>
 
@@ -114,9 +122,15 @@ async function handleSearch() {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 .search-input {
   width: 100%;
   padding: 10px 15px;
+  padding-right: 40px; /* Space for spinner */
   font-size: 16px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -125,5 +139,28 @@ async function handleSearch() {
 
 .search-input:focus {
   border-color: #4CAF50;
+}
+
+.search-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.loading-spinner {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #4CAF50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
 }
 </style>

@@ -6,6 +6,10 @@ const props = defineProps({
   results: {
     type: Object,
     default: () => ({ matches: [], divisions: [], searchTerm: '' })
+  },
+  isLoading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -21,6 +25,10 @@ const hasResults = computed(() => props.results.matches.length > 0)
 
 // Compute the results title based on the type of search
 const resultsTitle = computed(() => {
+  if (props.isLoading) {
+    return 'Loading results...'
+  }
+
   if (!hasResults.value) {
     return 'No Results'
   }
@@ -52,8 +60,8 @@ watch(() => props.results.matches.length, (newCount) => {
 }, { immediate: true })
 
 const toggleExpand = () => {
-  // Only allow toggling if there are results
-  if (hasResults.value) {
+  // Only allow toggling if there are results and not loading
+  if (hasResults.value && !props.isLoading) {
     isExpanded.value = !isExpanded.value
     emit('update:expanded', isExpanded.value)
   }
@@ -63,10 +71,13 @@ const toggleExpand = () => {
 <template>
   <div class="search-results" :class="{ expanded: isExpanded }">
     <div class="results-header" @click="toggleExpand">
-      <span class="result-count">{{ resultsTitle }}</span>
-      <button v-if="hasResults" class="expand-button">
-        {{ isExpanded ? '▼' : '▲' }}
-      </button>
+      <div class="header-content">
+        <span class="result-count">{{ resultsTitle }}</span>
+        <div v-if="props.isLoading" class="loading-spinner"></div>
+        <button v-else-if="hasResults" class="expand-button">
+          {{ isExpanded ? '▼' : '▲' }}
+        </button>
+      </div>
     </div>
 
     <div v-if="isExpanded" class="results-content">
@@ -127,14 +138,17 @@ const toggleExpand = () => {
 
 .results-header {
   padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
   border-bottom: 1px solid #eee;
   user-select: none;
   min-height: 52px;
   box-sizing: border-box;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
 }
 
 .cure-instructions {
@@ -170,6 +184,15 @@ const toggleExpand = () => {
   cursor: pointer;
   color: #666;
   padding: 8px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #4CAF50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .results-content {
@@ -238,6 +261,11 @@ const toggleExpand = () => {
 .status .value {
   color: #e63946;
   font-weight: 600;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Mobile Optimizations */
