@@ -9,6 +9,7 @@ const searchResults = ref({ matches: [], divisions: [], searchTerm: '' })
 const isResultsExpanded = ref(false)
 const searchQuery = ref('')
 const isSearching = ref(false)
+const isDivisionLoading = ref(false)
 
 function handleSearch(results) {
   searchResults.value = results
@@ -25,6 +26,10 @@ function handleMapSearch(results) {
   // Clear the search box without triggering a search clear
   searchQuery.value = ''
 }
+
+function handleDivisionLoadingChange(loading) {
+  isDivisionLoading.value = loading
+}
 </script>
 
 <template>
@@ -39,10 +44,11 @@ function handleMapSearch(results) {
         :searchResults="searchResults"
         :isResultsExpanded="isResultsExpanded"
         @update:searchResults="handleMapSearch"
+        @update:loading="handleDivisionLoadingChange"
       />
       <SearchResults
         :results="searchResults"
-        :isLoading="isSearching"
+        :isLoading="isSearching || isDivisionLoading"
         @update:expanded="handleExpandedChange"
       />
     </div>
