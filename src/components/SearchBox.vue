@@ -10,7 +10,8 @@ const props = defineProps({
 })
 
 const searchQuery = ref(props.modelValue)
-const isLoading = ref(false)
+const isLoading = ref(false)  // Only used for initial loading
+const isSearching = ref(false) // Used for search in progress
 const emit = defineEmits(['search', 'update:modelValue'])
 
 // Initialize Supabase client
@@ -66,7 +67,7 @@ async function handleSearch() {
   if (searchQuery.value.length < 3) return
 
   console.log('Executing search for:', searchQuery.value)
-  isLoading.value = true
+  isSearching.value = true
 
   try {
     const { data, error } = await supabase
@@ -94,7 +95,7 @@ async function handleSearch() {
   } catch (err) {
     console.error('Search error:', err)
   } finally {
-    isLoading.value = false
+    isSearching.value = false
   }
 }
 </script>
@@ -109,7 +110,7 @@ async function handleSearch() {
         class="search-input"
         :disabled="isLoading"
       />
-      <div v-if="isLoading" class="loading-spinner"></div>
+      <div v-if="isLoading || isSearching" class="loading-spinner"></div>
     </div>
   </div>
 </template>
