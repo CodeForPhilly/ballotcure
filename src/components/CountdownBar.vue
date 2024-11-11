@@ -53,7 +53,7 @@ onUnmounted(() => {
   width: 100%;
   position: relative;
   height: 40px;
-  background: #f5f5f5;
+  background: #ff474c;
 }
 
 .progress-bar {
@@ -61,6 +61,7 @@ onUnmounted(() => {
   height: 100%;
   position: relative;
   overflow: hidden;
+  direction: rtl;
 }
 
 .progress {
