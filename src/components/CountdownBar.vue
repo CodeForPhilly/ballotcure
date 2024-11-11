@@ -71,11 +71,14 @@ onUnmounted(() => {
 
 .time-left {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   color: #000;
   font-weight: bold;
   text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+  text-align: center;
+  line-height: 40px;
 }
 </style>
