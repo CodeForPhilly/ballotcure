@@ -9,15 +9,26 @@ export function highlightMatchedDivisions(map, divisions) {
 
     console.log('Highlighting divisions:', divisions)
 
-    // Reset all divisions to default style
-    map.setPaintProperty('divisions-fill', 'fill-color', '#627BC1')
-    map.setPaintProperty('divisions-fill', 'fill-opacity', 0.2)
     // Reset text styling to defaults
-    map.setPaintProperty('divisions-labels', 'text-color', '#ffffff')
-    map.setPaintProperty('divisions-labels', 'text-halo-color', '#ff474c')
-    map.setPaintProperty('divisions-labels', 'text-halo-width', 2)
+    map.setPaintProperty('divisions-labels', 'text-color', [
+        'case',
+        ['any',
+            ['==', ['typeof', ['get', 'count']], 'null'],
+            ['<=', ['to-number', ['get', 'count']], 0]
+        ],
+        '#666666',  // Dark gray for zero/null values
+        '#ffffff'   // White for non-zero values
+    ])
+    map.setPaintProperty('divisions-labels', 'text-halo-color', '#000000')
+    map.setPaintProperty('divisions-labels', 'text-halo-width', 1)
+
+    // Reset line styling
+    map.setPaintProperty('divisions-layer', 'line-color', '#627BC1')
+    map.setPaintProperty('divisions-layer', 'line-width', 1)
 
     if (!divisions || divisions.length === 0) {
+        // Clear highlight effects
+        map.setPaintProperty('divisions-highlight', 'fill-opacity', 0)
         return []
     }
 
@@ -33,41 +44,57 @@ export function highlightMatchedDivisions(map, divisions) {
 
     console.log('Applying match filter:', JSON.stringify(matchFilter))
 
-    // Highlight matched divisions
-    map.setPaintProperty('divisions-fill', 'fill-color', [
+    // Update highlight overlay for matched divisions
+    map.setPaintProperty('divisions-highlight', 'fill-opacity', [
         'case',
         matchFilter,
-        '#ff474c', // Highlight color for matches
-        '#627BC1'  // Default color
+        0.4,  // Semi-transparent highlight for matches
+        0     // Invisible for non-matches
     ])
 
-    map.setPaintProperty('divisions-fill', 'fill-opacity', [
+    // Add a bright border for highlighted divisions
+    map.setPaintProperty('divisions-layer', 'line-color', [
         'case',
         matchFilter,
-        0.5,  // Higher opacity for matches
-        0.2   // Default opacity
+        '#ff474c',  // Highlight color for matches
+        '#627BC1'   // Default color
+    ])
+
+    map.setPaintProperty('divisions-layer', 'line-width', [
+        'case',
+        matchFilter,
+        2.5,  // Thicker line for matches
+        1     // Default line width
     ])
 
     // Update text styling based on highlight state
     map.setPaintProperty('divisions-labels', 'text-color', [
         'case',
         matchFilter,
-        '#333333', // Dark text for highlighted divisions
-        '#ffffff'  // White text for normal divisions
+        '#000000', // Black text for highlighted divisions
+        [
+            'case',
+            ['any',
+                ['==', ['typeof', ['get', 'count']], 'null'],
+                ['<=', ['to-number', ['get', 'count']], 0]
+            ],
+            '#666666',  // Dark gray for zero/null values
+            '#ffffff'   // White for non-zero values
+        ]
     ])
 
     map.setPaintProperty('divisions-labels', 'text-halo-color', [
         'case',
         matchFilter,
         '#ffffff', // White halo for highlighted divisions
-        '#ff474c' // Red halo for normal divisions
+        '#000000'  // Black halo for normal divisions
     ])
 
     map.setPaintProperty('divisions-labels', 'text-halo-width', [
         'case',
         matchFilter,
         2.5, // Wider halo for highlighted divisions
-        2    // Normal halo width for others
+        1    // Normal halo width for others
     ])
 
     return convertedDivisions

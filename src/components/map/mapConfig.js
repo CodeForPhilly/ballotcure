@@ -64,7 +64,7 @@ export function addDivisionLayers(map, geojsonData) {
         data: geojsonData
     })
 
-    // Add fill layer first (below the line layer)
+    // Add base fill layer for count-based coloring
     map.addLayer({
         id: 'divisions-fill',
         type: 'fill',
@@ -94,7 +94,33 @@ export function addDivisionLayers(map, geojsonData) {
         }
     })
 
-    // Add labels layer
+    // Add highlight layer above the base fill
+    map.addLayer({
+        id: 'divisions-highlight',
+        type: 'fill',
+        source: 'divisions',
+        paint: {
+            'fill-color': '#ff474c',
+            'fill-opacity': 0,
+            'fill-opacity-transition': {
+                duration: 200
+            }
+        }
+    })
+
+    // Add hover effect layer
+    map.addLayer({
+        id: 'divisions-hover',
+        type: 'line',
+        source: 'divisions',
+        paint: {
+            'line-color': '#000000',
+            'line-width': 2
+        },
+        filter: ['==', ['get', 'division'], '']
+    })
+
+    // Add labels layer last so they're always on top
     map.addLayer({
         id: 'divisions-labels',
         type: 'symbol',
@@ -121,18 +147,6 @@ export function addDivisionLayers(map, geojsonData) {
             'text-halo-color': '#000000',
             'text-halo-width': 1
         }
-    })
-
-    // Add hover effect layer
-    map.addLayer({
-        id: 'divisions-hover',
-        type: 'line',
-        source: 'divisions',
-        paint: {
-            'line-color': '#000000',
-            'line-width': 2
-        },
-        filter: ['==', ['get', 'division'], '']
     })
 }
 
