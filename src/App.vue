@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import CountdownBar from './components/CountdownBar.vue'
 import SearchBox from './components/SearchBox.vue'
 import MapView from './components/MapView.vue'
+import SearchResults from './components/SearchResults.vue'
 
 const searchResults = ref({ matches: [], divisions: [] })
 
@@ -17,6 +18,7 @@ function handleSearch(results) {
     <SearchBox @search="handleSearch" />
     <div class="map-wrapper">
       <MapView :searchResults="searchResults" />
+      <SearchResults :results="searchResults" />
     </div>
   </div>
 </template>

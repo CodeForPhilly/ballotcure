@@ -1,0 +1,190 @@
+<script setup>
+import { ref, computed } from 'vue'
+
+const props = defineProps({
+  results: {
+    type: Object,
+    default: () => ({ matches: [], divisions: [] })
+  }
+})
+
+const isExpanded = ref(false)
+
+const sortedResults = computed(() => {
+  return [...props.results.matches].sort((a, b) => a.name.localeCompare(b.name))
+})
+
+const toggleExpand = () => {
+  isExpanded.value = !isExpanded.value
+}
+</script>
+
+<template>
+  <div class="search-results" :class="{ expanded: isExpanded }">
+    <div class="results-header" @click="toggleExpand">
+      <span class="result-count">{{ props.results.matches.length }} Results</span>
+      <button class="expand-button">
+        {{ isExpanded ? '▼' : '▲' }}
+      </button>
+    </div>
+
+    <div v-if="isExpanded" class="results-content">
+      <div class="results-list">
+        <div v-for="result in sortedResults" :key="result.name + result.division" class="result-card">
+          <div class="result-name">{{ result.name }}</div>
+          <div class="result-details">
+            <div class="detail-row">
+              <span class="label">Division:</span>
+              <span class="value">{{ result.division }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">ID:</span>
+              <span class="value">{{ result.id_number }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Birth Year:</span>
+              <span class="value">{{ result.birth_year }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">ZIP:</span>
+              <span class="value">{{ result.zip }}</span>
+            </div>
+            <div class="detail-row status">
+              <span class="label">Status:</span>
+              <span class="value">{{ result.ballot_status_reason }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.search-results {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  border-radius: 12px 12px 0 0;
+  transition: transform 0.3s ease;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.results-header {
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  user-select: none;
+}
+
+.result-count {
+  font-weight: 600;
+  color: #333;
+}
+
+.expand-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #666;
+}
+
+.results-content {
+  overflow-y: auto;
+  padding: 10px;
+  flex: 1;
+}
+
+.results-list {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.result-card {
+  background: #f8f9fa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  transition: transform 0.2s ease;
+}
+
+.result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.result-name {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.result-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.label {
+  color: #666;
+  font-size: 14px;
+}
+
+.value {
+  color: #2c3e50;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status .value {
+  color: #e63946;
+  font-weight: 600;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .results-list {
+    grid-template-columns: 1fr;
+  }
+
+  .search-results {
+    max-height: 70vh;
+  }
+
+  .result-card {
+    padding: 10px;
+  }
+}
+
+/* Ensure smooth scrolling on iOS */
+@supports (-webkit-touch-callout: none) {
+  .results-content {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+</style>

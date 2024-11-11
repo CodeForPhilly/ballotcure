@@ -45,7 +45,7 @@ async function handleSearch() {
   try {
     const { data, error } = await supabase
       .from('phila_ballots')
-      .select('name, ward, division')
+      .select('name, division, id_number, birth_year, zip, ballot_status_reason')
       .ilike('name', `%${searchQuery.value}%`)
       .limit(100)
 
