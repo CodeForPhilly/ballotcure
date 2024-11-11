@@ -16,9 +16,11 @@ const sortedResults = computed(() => {
   return [...props.results.matches].sort((a, b) => a.name.localeCompare(b.name))
 })
 
+const hasResults = computed(() => props.results.matches.length > 0)
+
 // Compute the results title based on the type of search
 const resultsTitle = computed(() => {
-  if (props.results.matches.length === 0) {
+  if (!hasResults.value) {
     return 'No Results'
   }
 
@@ -49,8 +51,11 @@ watch(() => props.results.matches.length, (newCount) => {
 }, { immediate: true })
 
 const toggleExpand = () => {
-  isExpanded.value = !isExpanded.value
-  emit('update:expanded', isExpanded.value)
+  // Only allow toggling if there are results
+  if (hasResults.value) {
+    isExpanded.value = !isExpanded.value
+    emit('update:expanded', isExpanded.value)
+  }
 }
 </script>
 
@@ -58,7 +63,7 @@ const toggleExpand = () => {
   <div class="search-results" :class="{ expanded: isExpanded }">
     <div class="results-header" @click="toggleExpand">
       <span class="result-count">{{ resultsTitle }}</span>
-      <button class="expand-button">
+      <button v-if="hasResults" class="expand-button">
         {{ isExpanded ? '▼' : '▲' }}
       </button>
     </div>
