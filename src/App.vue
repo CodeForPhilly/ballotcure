@@ -10,6 +10,7 @@ const isResultsExpanded = ref(false)
 const searchQuery = ref('')
 const isSearching = ref(false)
 const isDivisionLoading = ref(false)
+const isLocationLoading = ref(false)
 
 function handleSearch(results) {
   searchResults.value = results
@@ -30,6 +31,10 @@ function handleMapSearch(results) {
 function handleDivisionLoadingChange(loading) {
   isDivisionLoading.value = loading
 }
+
+function handleLocationLoadingChange(loading) {
+  isLocationLoading.value = loading
+}
 </script>
 
 <template>
@@ -45,10 +50,12 @@ function handleDivisionLoadingChange(loading) {
         :isResultsExpanded="isResultsExpanded"
         @update:searchResults="handleMapSearch"
         @update:loading="handleDivisionLoadingChange"
+        @update:locationLoading="handleLocationLoadingChange"
       />
       <SearchResults
         :results="searchResults"
         :isLoading="isSearching || isDivisionLoading"
+        :isLocationLoading="isLocationLoading"
         @update:expanded="handleExpandedChange"
       />
     </div>

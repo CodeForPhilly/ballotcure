@@ -10,6 +10,10 @@ const props = defineProps({
   isLoading: {
     type: Boolean,
     default: false
+  },
+  isLocationLoading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -25,6 +29,10 @@ const hasResults = computed(() => props.results.matches.length > 0)
 
 // Compute the results title based on the type of search
 const resultsTitle = computed(() => {
+  if (props.isLocationLoading) {
+    return 'Getting your location...'
+  }
+
   if (props.isLoading) {
     return 'Loading results...'
   }
@@ -61,7 +69,7 @@ watch(() => props.results.matches.length, (newCount) => {
 
 const toggleExpand = () => {
   // Only allow toggling if there are results and not loading
-  if (hasResults.value && !props.isLoading) {
+  if (hasResults.value && !props.isLoading && !props.isLocationLoading) {
     isExpanded.value = !isExpanded.value
     emit('update:expanded', isExpanded.value)
   }
@@ -73,7 +81,7 @@ const toggleExpand = () => {
     <div class="results-header" @click="toggleExpand">
       <div class="header-content">
         <span class="result-count">{{ resultsTitle }}</span>
-        <div v-if="props.isLoading" class="loading-spinner"></div>
+        <div v-if="isLoading || isLocationLoading" class="loading-spinner"></div>
         <button v-else-if="hasResults" class="expand-button">
           {{ isExpanded ? '▼' : '▲' }}
         </button>

@@ -13,7 +13,6 @@ let userMarker = null
 
 // Loading states
 const isLoadingMap = ref(true)
-const isLoadingLocation = ref(false)
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -44,7 +43,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:searchResults', 'update:loading'])
+const emit = defineEmits(['update:searchResults', 'update:loading', 'update:locationLoading'])
 
 // Create a custom marker element
 function createMarkerElement() {
@@ -185,7 +184,7 @@ async function selectDivision(division, location = null) {
 
 // Function to highlight user's division
 async function highlightUserDivision() {
-  isLoadingLocation.value = true;
+  emit('update:locationLoading', true);
 
   try {
     const location = await getUserLocation();
@@ -212,7 +211,7 @@ async function highlightUserDivision() {
   } catch (error) {
     console.error('Error getting user location:', error);
   } finally {
-    isLoadingLocation.value = false;
+    emit('update:locationLoading', false);
   }
 }
 
@@ -328,15 +327,10 @@ onUnmounted(() => {
   <div class="map-container">
     <div ref="mapContainer" class="map"></div>
 
-    <!-- Loading overlays -->
+    <!-- Loading overlay -->
     <div v-if="isLoadingMap" class="loading-overlay">
       <div class="loading-spinner"></div>
       <div class="loading-text">Loading map data...</div>
-    </div>
-
-    <div v-if="isLoadingLocation" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <div class="loading-text">Getting your location...</div>
     </div>
   </div>
 </template>
