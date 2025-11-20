@@ -184,6 +184,6 @@ export function updateFillColors(map, divisionStats) {
 }
 
 export async function loadDivisionData() {
-    const response = await fetch('/data/philadelphia-divisions.geojson')
+    const response = await fetch('https://codeforphilly.github.io/ballotcure/data/philadelphia-divisions.geojson')
     return await response.json()
 }
