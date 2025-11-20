@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { createClient } from '@supabase/supabase-js'
+import { searchByName } from '../services/dataService'
 
 const props = defineProps({
   modelValue: {
@@ -13,17 +13,6 @@ const searchQuery = ref(props.modelValue)
 const isLoading = ref(false)  // Only used for initial loading
 const isSearching = ref(false) // Used for search in progress
 const emit = defineEmits(['search', 'update:modelValue'])
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      persistSession: false
-    }
-  }
-)
 
 // Debounce function to limit API calls
 let debounceTimeout
@@ -70,16 +59,7 @@ async function handleSearch() {
   isSearching.value = true
 
   try {
-    const { data, error } = await supabase
-      .from('phila_ballots')
-      .select('name, division, id_number, birth_year, zip, ballot_status_reason')
-      .ilike('name', `%${searchQuery.value}%`)
-      .limit(100)
-
-    if (error) {
-      console.error('Supabase search error:', error)
-      return
-    }
+    const data = await searchByName(searchQuery.value, 100)
 
     console.log('Search results:', data)
 
@@ -108,14 +88,8 @@ function handleDone(event) {
 <template>
   <div class="search-container">
     <div class="search-wrapper">
-      <input
-        type="text"
-        v-model="searchQuery"
-        placeholder="Search by name (min 3 characters)..."
-        class="search-input"
-        :disabled="isLoading"
-        @keyup.enter="handleDone"
-      />
+      <input type="text" v-model="searchQuery" placeholder="Search by name (min 3 characters)..." class="search-input"
+        :disabled="isLoading" @keyup.enter="handleDone" />
       <div v-if="isLoading || isSearching" class="loading-spinner"></div>
     </div>
   </div>
@@ -126,7 +100,7 @@ function handleDone(event) {
   width: 100%;
   padding: 10px;
   background: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .search-wrapper {
@@ -137,7 +111,8 @@ function handleDone(event) {
 .search-input {
   width: 100%;
   padding: 10px 15px;
-  padding-right: 40px; /* Space for spinner */
+  padding-right: 40px;
+  /* Space for spinner */
   font-size: 16px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -167,7 +142,12 @@ function handleDone(event) {
 }
 
 @keyframes spin {
-  0% { transform: translateY(-50%) rotate(0deg); }
-  100% { transform: translateY(-50%) rotate(360deg); }
+  0% {
+    transform: translateY(-50%) rotate(0deg);
+  }
+
+  100% {
+    transform: translateY(-50%) rotate(360deg);
+  }
 }
 </style>

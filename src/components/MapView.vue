@@ -4,7 +4,7 @@ import { initializeMap, addDivisionLayers, loadDivisionData } from './map/mapCon
 import { highlightMatchedDivisions, fitMapToFeatures } from './map/divisionHighlighting'
 import { fetchDivisionStats, updateSourceWithCounts } from './map/divisionStats'
 import { debounce, divisionWithHyphen, findDivisionByCoordinates } from './map/divisionUtils'
-import { createClient } from '@supabase/supabase-js'
+import { getByDivision } from '../services/dataService'
 import maplibregl from 'maplibre-gl'
 
 const mapContainer = ref(null)
@@ -13,17 +13,6 @@ let userMarker = null
 
 // Loading states
 const isLoadingMap = ref(true)
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      persistSession: false
-    }
-  }
-)
 
 // Store highlighted divisions in reactive state
 const highlightedDivisions = ref([])
@@ -142,16 +131,7 @@ async function selectDivision(division, location = null) {
   emit('update:loading', true);
 
   try {
-    const { data, error } = await supabase
-      .from('phila_ballots')
-      .select('name, division, id_number, birth_year, zip, ballot_status_reason')
-      .eq('division', divisionWithHyphen(division))
-      .limit(100);
-
-    if (error) {
-      console.error('Supabase search error:', error);
-      return;
-    }
+    const data = await getByDivision(divisionWithHyphen(division), 100);
 
     console.log('Search results:', data);
 
@@ -198,7 +178,7 @@ async function highlightUserDivision() {
     };
 
     if (location.lat < phillyBounds.south || location.lat > phillyBounds.north ||
-        location.lng < phillyBounds.west || location.lng > phillyBounds.east) {
+      location.lng < phillyBounds.west || location.lng > phillyBounds.east) {
       console.log('User location is outside Philadelphia');
       return;
     }
@@ -379,7 +359,12 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
