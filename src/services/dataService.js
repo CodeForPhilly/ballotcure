@@ -18,8 +18,8 @@ async function loadData() {
   loadPromise = (async () => {
     try {
       const [ballotsResponse, statsResponse] = await Promise.all([
-        fetch('/data/phila_ballots.json'),
-        fetch('/data/division_stats.json')
+        fetch('https://codeforphilly.github.io/ballotcure/data/phila_ballots.json'),
+        fetch('https://codeforphilly.github.io/ballotcure/data/division_stats.json')
       ]);
 
       if (!ballotsResponse.ok || !statsResponse.ok) {
